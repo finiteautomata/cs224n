@@ -22,12 +22,14 @@ class PartialParse(object):
         ### Your code should initialize the following fields:
         ###     self.stack: The current stack represented as a list with the top of the stack as the
         ###                 last element of the list.
+        self.stack = ["ROOT"]
         ###     self.buffer: The current buffer represented as a list with the first item on the
         ###                  buffer as the first item of the list
+        self.buffer = sentence.copy()
         ###     self.dependencies: The list of dependencies produced so far. Represented as a list of
         ###             tuples where each tuple is of the form (head, dependent).
         ###             Order for this list doesn't matter.
-        ###
+        self.dependencies = []
         ### Note: The root token should be represented with the string "ROOT"
         ###
 
@@ -50,7 +52,20 @@ class PartialParse(object):
         ###         2. Left Arc
         ###         3. Right Arc
 
-
+        if transition == "S":
+            self.stack.append(self.buffer.pop(0))
+        elif transition == "LA":
+            w_i, w_j = self.stack[-1], self.stack[-2]
+            self.dependencies.append((w_i, w_j))
+            self.stack.pop()
+            self.stack.pop()
+            self.stack.append(w_i)
+        elif transition == "RA":
+            w_i, w_j = self.stack[-1], self.stack[-2]
+            self.dependencies.append((w_j, w_i))
+            self.stack.pop()
+            self.stack.pop()
+            self.stack.append(w_j)
         ### END YOUR CODE
 
     def parse(self, transitions):
