@@ -42,7 +42,6 @@ class NMT(nn.Module):
         self.vocab = vocab
 
         # default values
-        self.encoder = None 
         self.decoder = None
         self.h_projection = None
         self.c_projection = None
@@ -73,7 +72,18 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
-
+        self.encoder = nn.LSTM(
+            input_size=embed_size, hidden_size=hidden_size,
+            bias=True, bidirectional=True, dropout=dropout_rate
+        )
+        
+        self.decoder = nn.LSTM(
+            input_size=embed_size, hidden_size=hidden_size,
+            bias=True, bidirectional=True, dropout=dropout_rate
+        )
+        
+        self.h_projection = nn.Linear(2*hidden_size, hidden_size)
+        self.c_projection = nn.Linear(2*hidden_size, hidden_size)
         ### END YOUR CODE
 
 
