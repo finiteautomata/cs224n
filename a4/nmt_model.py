@@ -41,16 +41,6 @@ class NMT(nn.Module):
         self.dropout_rate = dropout_rate
         self.vocab = vocab
 
-        # default values
-        self.decoder = None
-        self.h_projection = None
-        self.c_projection = None
-        self.att_projection = None
-        self.combined_output_projection = None
-        self.target_vocab_projection = None
-        self.dropout = None
-
-
         ### YOUR CODE HERE (~8 Lines)
         ### TODO - Initialize the following variables:
         ###     self.encoder (Bidirectional LSTM with bias)
@@ -71,7 +61,6 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Linear
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
-
         self.encoder = nn.LSTM(
             input_size=embed_size, hidden_size=hidden_size,
             bias=True, bidirectional=True, dropout=dropout_rate
@@ -82,8 +71,15 @@ class NMT(nn.Module):
             bias=True, bidirectional=True, dropout=dropout_rate
         )
         
-        self.h_projection = nn.Linear(2*hidden_size, hidden_size)
-        self.c_projection = nn.Linear(2*hidden_size, hidden_size)
+        self.h_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
+        self.c_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
+        
+        self.att_projection = nn.Linear(hidden_size, 2 * hidden_size, bias=False)
+        self.combined_output_projection = nn.Linear(hidden_size, 3* hidden_size, bias=False)
+        self.target_vocab_projection = nn.Linear(len(vocab.tgt), hidden_size, bias=True)
+            
+        self.dropout = nn.Dropout(dropout_rate)
+
         ### END YOUR CODE
 
 
@@ -172,8 +168,30 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
-
-
+        src_len, b = source_padded.shape
+        
+        X = self.model_embeddings.source(source_padded)
+        X_pack = pack_padded_sequence(X, source_lengths)
+        
+        # Ok, it wasnt quite clear it returned this
+        # I admit I had to see this elsewhere (https://github.com/ZacBi/CS224n-2019-solutions/blob/master/Assignments/a4/nmt_model.py)
+        hidden_packed, (last_hidden, last_cell) = self.encoder(X_pack)
+        
+        enc_hiddens, _ = pad_packed_sequence(hidden_packed)
+        enc_hiddens = enc_hiddens.permute([1, 0, 2])
+        # Now, shape is (b, src_len, h*2)
+        
+        init_decoder_hidden = self.h_projection(
+            torch.cat([last_hidden[0], last_hidden[1]], dim=1)
+        )
+        
+        init_decoder_cell = self.c_projection(
+            torch.cat([last_cell[0], last_cell[1]], dim=1)
+        )
+        
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
+        
+        
         ### END YOUR CODE
 
         return enc_hiddens, dec_init_state
