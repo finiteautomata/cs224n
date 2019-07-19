@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -11,7 +10,7 @@ Anand Dhoot <anandd@stanford.edu>
 
 import torch.nn as nn
 
-class ModelEmbeddings(nn.Module): 
+class ModelEmbeddings(nn.Module):
     """
     Class that converts input words to their embeddings.
     """
@@ -50,5 +49,3 @@ class ModelEmbeddings(nn.Module):
         self.source = nn.Embedding(embedding_dim=embed_size, num_embeddings=len(vocab.src))
         self.target = nn.Embedding(embedding_dim=embed_size, num_embeddings=len(vocab.tgt))
         ### END YOUR CODE
-
-
