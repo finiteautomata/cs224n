@@ -264,10 +264,13 @@ class NMT(nn.Module):
         for chunk in torch.split(Y, 1):
             Y_t = chunk.squeeze()
             Ybar_t = torch.cat([Y_t, o_prev])
-            cell, state = self.step(
+            dec_state, combined_output, att_scores = self.step(
                 Ybar_t, dec_state, enc_hiddens,
                 enc_hiddens_proj, enc_masks)
+            combined_outputs.append(combined_output)
+            o_prev = combined_output
 
+        combined_outputs = torch.stack(combined_outputs)
         ### END YOUR CODE
 
         return combined_outputs
