@@ -75,7 +75,7 @@ class NMT(nn.Module):
 
         self.att_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.combined_output_projection = nn.Linear(3*hidden_size,  hidden_size, bias=False)
-        self.target_vocab_projection = nn.Linear(len(vocab.tgt), hidden_size, bias=True)
+        self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt), bias=True)
 
         self.dropout = nn.Dropout(dropout_rate)
 
@@ -263,7 +263,7 @@ class NMT(nn.Module):
 
         for chunk in torch.split(Y, 1):
             Y_t = chunk.squeeze(0)
-            Ybar_t = torch.cat([Y_t, o_prev])
+            Ybar_t = torch.cat([Y_t, o_prev], dim=1)
             dec_state, combined_output, att_scores = self.step(
                 Ybar_t, dec_state, enc_hiddens,
                 enc_hiddens_proj, enc_masks)
@@ -330,8 +330,7 @@ class NMT(nn.Module):
 
         ###     1. Apply the decoder to `Ybar_t` and `dec_state`to obtain the new dec_state.
         ###     2. Split dec_state into its two parts (dec_hidden, dec_cell)
-        dec_state = self.decoder(
-            Ybar_t, dec_state)
+        dec_state = self.decoder(Ybar_t, dec_state)
         dec_hidden, dec_cell = dec_state
         ###     3. Compute the attention scores e_t, a Tensor shape (b, src_len).
         ###        Note: b = batch_size, src_len = maximum source length, h = hidden size.
@@ -345,7 +344,7 @@ class NMT(nn.Module):
         ### YOUR CODE HERE (~6 Lines)
         ### TODO:
         ###     1. Apply softmax to e_t to yield alpha_t
-        alpha_t = F.softmax(e_t)
+        alpha_t = F.softmax(e_t, dim=1)
 
         ###     2. Use batched matrix multiplication between alpha_t and enc_hiddens to obtain the
         ###         attention output vector, a_t.
@@ -366,7 +365,6 @@ class NMT(nn.Module):
         ###     5. Compute tensor O_t by first applying the Tanh function and then the dropout layer.
         O_t = torch.tanh(V_t)
         O_t = self.dropout(O_t)
-        import ipdb; ipdb.set_trace()
 
         ### END YOUR CODE
 
@@ -375,6 +373,11 @@ class NMT(nn.Module):
 
     def generate_sent_masks(self, enc_hiddens: torch.Tensor, source_lengths: List[int]) -> torch.Tensor:
         """ Generate sentence masks for encoder hidden states.
+
+        Q: "First explain (in around three sentences) what effect the masks have on the entire attention computation."
+        Answer: Masks try to avoid putting attention into the words that are not part of the sentence; that is, padding words.
+
+        Q: "Then explain (in one or two sentences) why it is necessary to use the masks in this way."
 
         @param enc_hiddens (Tensor): encodings of shape (b, src_len, 2*h), where b = batch size,
                                      src_len = max source length, h = hidden size.
