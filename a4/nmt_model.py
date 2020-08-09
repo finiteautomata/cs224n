@@ -141,11 +141,31 @@ class NMT(nn.Module):
         ###     1. Construct Tensor `X` of source sentences with shape (src_len, b, e) using the source model embeddings.
         ###         src_len = maximum source sentence length, b = batch size, e = embedding size. Note
         ###         that there is no initial hidden state or cell for the decoder.
+        src_len, b = source_padded.shape
+
+        X = self.model_embeddings.source(source_padded)
+        X_pack = pack_padded_sequence(X, source_lengths)
         ###     2. Compute `enc_hiddens`, `last_hidden`, `last_cell` by applying the encoder to `X`.
         ###         - Before you can apply the encoder, you need to apply the `pack_padded_sequence` function to X.
         ###         - After you apply the encoder, you need to apply the `pad_packed_sequence` function to enc_hiddens.
         ###         - Note that the shape of the tensor returned by the encoder is (src_len b, h*2) and we want to
         ###           return a tensor of shape (b, src_len, h*2) as `enc_hiddens`.
+
+        # Ok, it wasnt quite clear it returned this
+        # I admit I had to see this elsewhere (https://github.com/ZacBi/CS224n-2019-solutions/blob/master/Assignments/a4/nmt_model.py)
+        hidden_packed, (last_hidden, last_cell) = self.encoder(X_pack)
+
+        enc_hiddens, _ = pad_packed_sequence(hidden_packed)
+        enc_hiddens = enc_hiddens.permute([1, 0, 2])
+        # Now, shape is (b, src_len, h*2)
+
+        init_decoder_hidden = self.h_projection(
+        torch.cat([last_hidden[0], last_hidden[1]], dim=1)
+        )
+
+        init_decoder_cell = self.c_projection(
+        torch.cat([last_cell[0], last_cell[1]], dim=1)
+        )
         ###     3. Compute `dec_init_state` = (init_decoder_hidden, init_decoder_cell):
         ###         - `init_decoder_hidden`:
         ###             `last_hidden` is a tensor shape (2, b, h). The first dimension corresponds to forwards and backwards.
@@ -167,26 +187,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
-        src_len, b = source_padded.shape
 
-        X = self.model_embeddings.source(source_padded)
-        X_pack = pack_padded_sequence(X, source_lengths)
-
-        # Ok, it wasnt quite clear it returned this
-        # I admit I had to see this elsewhere (https://github.com/ZacBi/CS224n-2019-solutions/blob/master/Assignments/a4/nmt_model.py)
-        hidden_packed, (last_hidden, last_cell) = self.encoder(X_pack)
-
-        enc_hiddens, _ = pad_packed_sequence(hidden_packed)
-        enc_hiddens = enc_hiddens.permute([1, 0, 2])
-        # Now, shape is (b, src_len, h*2)
-
-        init_decoder_hidden = self.h_projection(
-            torch.cat([last_hidden[0], last_hidden[1]], dim=1)
-        )
-
-        init_decoder_cell = self.c_projection(
-            torch.cat([last_cell[0], last_cell[1]], dim=1)
-        )
 
         dec_init_state = (init_decoder_hidden, init_decoder_cell)
 
@@ -334,7 +335,7 @@ class NMT(nn.Module):
         dec_hidden, dec_cell = dec_state
         ###     3. Compute the attention scores e_t, a Tensor shape (b, src_len).
         ###        Note: b = batch_size, src_len = maximum source length, h = hidden size.
-        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(2)).squeeze()
+        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(2)).squeeze(-1)
         ### END YOUR CODE
 
         # Set e_t to -inf where enc_masks has 1
