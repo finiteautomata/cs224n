@@ -7,11 +7,13 @@ sanity_check.py: sanity checks for assignment 5
 Usage:
     sanity_check.py 1e
     sanity_check.py 1f
+    sanity_check.py 1g
     sanity_check.py 1j
     sanity_check.py 2a
     sanity_check.py 2b
     sanity_check.py 2c
     sanity_check.py 2d
+
 """
 import json
 import math
@@ -95,7 +97,28 @@ def question_1f_sanity_check():
     print("Sanity Check Passed for Question 1f: Padding!")
     print("-"*80)
 
+def question_1g_sanity_check():
+    """ Sanity check for to_input_tensor_char() function.
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1g: to_input_tensor_char")
+    print ("-"*80)
+    vocab = VocabEntry()
 
+    print("Running test on a list of sentences")
+    sentences = [['Human:', 'What', 'do', 'we', 'want?'], ['Computer:', 'Natural', 'language', 'processing!'], ['Human:', 'When', 'do', 'we', 'want', 'it?'], ['Computer:', 'When', 'do', 'we', 'want', 'what?']]
+
+    X = vocab.to_input_tensor_char(sentences, "cpu")
+
+    # 6 is the max_sentence_length
+    # 4 is batch size
+    # 21 is max_word_length
+    assert X.shape == (6, 4, 21), f"Size is incorrect: it should be (6, 4, 21) but it is {X.shape}"
+
+
+    print("Sanity Check Passed for Question 1g: to_input_tensor_char!")
+    print("-"*80)
+    
 def question_1j_sanity_check(model):
 	""" Sanity check for model_embeddings.py
 		basic shape check
@@ -213,6 +236,8 @@ def main():
         question_1e_sanity_check()
     elif args['1f']:
         question_1f_sanity_check()
+    elif args['1g']:
+        question_1g_sanity_check()
     elif args['1j']:
         question_1j_sanity_check(model)
     elif args['2a']:
