@@ -29,6 +29,7 @@ def pad_sents_char(sents, char_pad_token):
     """
     # Words longer than 21 characters should be truncated
     max_word_length = 21
+    max_sentence_length = max(len(sent) for sent in sents)
 
     ### YOUR CODE HERE for part 1f
     ### TODO:
@@ -41,18 +42,27 @@ def pad_sents_char(sents, char_pad_token):
     ###     You should NOT use the method `pad_sents()` below because of the way it handles
     ###     padding and unknown words.
 
-    sents_padded = []
-
+    ret = []
     for sent in sents:
-        length = len(sent)
-        padding_length = max(0, max_word_length - length)
-        padded_sent = sent[:l] + [char_pad_token] * padding_length
-        sents_padded.append(padded_sent)
+        padded_sent = []
+        sent_padding = max_sentence_length - len(sent)
+
+        for word in sent:
+            word_length = len(word)
+            word_pad = max(0, max_word_length - word_length)
+            padded_word = word[:max_word_length] + [char_pad_token] * word_pad
+            padded_sent.append(padded_word)
+
+        for _ in range(sent_padding):
+            padded_sent.append([char_pad_token] * max_word_length)
+
+        ret.append(padded_sent)
+
 
 
     ### END YOUR CODE
 
-    return sents_padded
+    return ret
 
 
 def pad_sents(sents, pad_token):
