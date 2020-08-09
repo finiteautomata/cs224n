@@ -8,6 +8,7 @@ Usage:
     sanity_check.py 1e
     sanity_check.py 1f
     sanity_check.py 1g
+    sanity_check.py 1h
     sanity_check.py 1j
     sanity_check.py 2a
     sanity_check.py 2b
@@ -28,6 +29,7 @@ from typing import List, Tuple, Dict, Set, Union
 from tqdm import tqdm
 from utils import pad_sents_char, read_corpus, batch_iter
 from vocab import Vocab, VocabEntry
+from highway import Highway
 
 from char_decoder import CharDecoder
 from nmt_model import NMT
@@ -118,7 +120,51 @@ def question_1g_sanity_check():
 
     print("Sanity Check Passed for Question 1g: to_input_tensor_char!")
     print("-"*80)
-    
+
+
+def question_1h_sanity_check():
+    """ Sanity check for to_input_tensor_char() function.
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1h: highway")
+    print ("-"*80)
+
+    batch_size = 32
+    emb_size = 100
+
+    highway = Highway(emb_size, 0.1)
+    input = torch.rand(batch_size, emb_size)
+
+    output = highway(input)
+
+    assert(output.shape == (batch_size, emb_size))
+
+    # Check that if gate blocks everything, receive same as input
+
+    highway = Highway(emb_size, 0)
+    # Very large negative size
+    highway.gate.weight = nn.Parameter(torch.ones(emb_size, emb_size) * -10000.)
+    input = torch.rand(batch_size, emb_size)
+    output = highway(input)
+
+    assert(torch.allclose(output, input))
+
+    # Check that if gate allow everything,output is transformation of input
+
+    highway = Highway(emb_size, 0)
+    # Very large negative size
+    highway.gate.weight = nn.Parameter(torch.ones(emb_size, emb_size) * 10000.)
+    highway.proj.weight = nn.Parameter( 2.0 * torch.eye(emb_size, emb_size))
+    highway.proj.bias = nn.Parameter( torch.zeros(emb_size))
+
+    input = torch.rand(batch_size, emb_size)
+    output = highway(input)
+
+    assert(torch.allclose(input * 2, output))
+
+    print("Sanity Check Passed for Question 1h")
+    print("-"*80)
+
 def question_1j_sanity_check(model):
 	""" Sanity check for model_embeddings.py
 		basic shape check
@@ -238,6 +284,8 @@ def main():
         question_1f_sanity_check()
     elif args['1g']:
         question_1g_sanity_check()
+    elif args["1h"]:
+        question_1h_sanity_check()
     elif args['1j']:
         question_1j_sanity_check(model)
     elif args['2a']:
