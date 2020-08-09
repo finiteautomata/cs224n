@@ -1,2 +1,3 @@
 # cs224n
-Curso CS224N de Stanford
+
+Solutions for CS224N Stanford 2019 course.
