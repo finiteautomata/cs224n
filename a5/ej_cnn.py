@@ -19,4 +19,10 @@ if __name__ == "__main__":
 
     assert(out.shape == (batch_len, channels_out, 4))
 
+    # Testing max pooling
+    # Descarto segundo porque son índices
+    max_out, _ = torch.max(out, 2)
+
+    assert(max_out.shape == (batch_len, channels_out))
+
     print("Tests pasados correctamente")

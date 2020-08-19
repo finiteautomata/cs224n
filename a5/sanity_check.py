@@ -9,6 +9,7 @@ Usage:
     sanity_check.py 1f
     sanity_check.py 1g
     sanity_check.py 1h
+    sanity_check.py 1i
     sanity_check.py 1j
     sanity_check.py 2a
     sanity_check.py 2b
@@ -30,7 +31,7 @@ from tqdm import tqdm
 from utils import pad_sents_char, read_corpus, batch_iter
 from vocab import Vocab, VocabEntry
 from highway import Highway
-
+from cnn import CNN
 from char_decoder import CharDecoder
 from nmt_model import NMT
 
@@ -123,7 +124,7 @@ def question_1g_sanity_check():
 
 
 def question_1h_sanity_check():
-    """ Sanity check for to_input_tensor_char() function.
+    """ Sanity check for Highway function.
     """
     print ("-"*80)
     print("Running Sanity Check for Question 1h: highway")
@@ -157,13 +158,39 @@ def question_1h_sanity_check():
     highway.proj.weight = nn.Parameter( 2.0 * torch.eye(emb_size, emb_size))
     highway.proj.bias = nn.Parameter( torch.zeros(emb_size))
 
-    input = torch.rand(batch_size, emb_size)
+    input = torch.randimd(batch_size, emb_size)
     output = highway(input)
 
     assert(torch.allclose(input * 2, output))
 
     print("Sanity Check Passed for Question 1h")
     print("-"*80)
+
+def question_1i_sanity_check():
+    """
+    Sanity check for CNN
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1I: CNN")
+    print ("-"*80)
+
+    batch_size = 32
+    emb_size = 100
+    out_size = 30
+    seq_len = 15
+    kernel_size = 5
+
+    input = torch.rand(batch_size, emb_size, seq_len)
+
+    conv = CNN(emb_size, out_size, kernel_size)
+
+    out = conv(input)
+
+    assert(out.shape == (batch_size, out_size))
+
+    print("Sanity check passed for question 1I: CNN")
+
+
 
 def question_1j_sanity_check(model):
 	""" Sanity check for model_embeddings.py
@@ -286,6 +313,8 @@ def main():
         question_1g_sanity_check()
     elif args["1h"]:
         question_1h_sanity_check()
+    elif args["1i"]:
+        question_1i_sanity_check()
     elif args['1j']:
         question_1j_sanity_check(model)
     elif args['2a']:
