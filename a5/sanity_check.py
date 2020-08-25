@@ -133,7 +133,7 @@ def question_1h_sanity_check():
     batch_size = 32
     emb_size = 100
 
-    highway = Highway(emb_size, 0.1)
+    highway = Highway(emb_size)
     input = torch.rand(batch_size, emb_size)
 
     output = highway(input)
@@ -142,7 +142,7 @@ def question_1h_sanity_check():
 
     # Check that if gate blocks everything, receive same as input
 
-    highway = Highway(emb_size, 0)
+    highway = Highway(emb_size)
     # Very large negative size
     highway.gate.weight = nn.Parameter(torch.ones(emb_size, emb_size) * -10000.)
     input = torch.rand(batch_size, emb_size)
@@ -152,13 +152,13 @@ def question_1h_sanity_check():
 
     # Check that if gate allow everything,output is transformation of input
 
-    highway = Highway(emb_size, 0)
+    highway = Highway(emb_size)
     # Very large negative size
     highway.gate.weight = nn.Parameter(torch.ones(emb_size, emb_size) * 10000.)
     highway.proj.weight = nn.Parameter( 2.0 * torch.eye(emb_size, emb_size))
     highway.proj.bias = nn.Parameter( torch.zeros(emb_size))
 
-    input = torch.randimd(batch_size, emb_size)
+    input = torch.rand(batch_size, emb_size)
     output = highway(input)
 
     assert(torch.allclose(input * 2, output))

@@ -11,11 +11,11 @@ from torch.nn import functional as F
 
 class Highway(nn.Module):
 
-    def __init__(self, dim, dropout_rate=0.1):
+    def __init__(self, dim):
         super().__init__()
         self.proj = nn.Linear(dim, dim)
         self.gate = nn.Linear(dim, dim)
-        self.dropout = nn.Dropout(dropout_rate)
+
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         # input (batch_size, dim)
@@ -26,6 +26,6 @@ class Highway(nn.Module):
 
         x_highway = x_gate * x_proj + (1 - x_gate) * input
 
-        return self.dropout(x_highway)
+        return x_highway
 
 ### END YOUR CODE
